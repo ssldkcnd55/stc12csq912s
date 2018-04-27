@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC
+"-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="board">
+
+	<resultMap id="resultBoard" type="Board">
+		<!-- prop 는 필드명, column 은 DB 컬럼 명 -->
+		<id property="boardNum" column="BOARD_NUM" />
+		<result property="boardTitle" column="BOARD_TITLE" />
+		<result property="boardWriter" column="BOARD_WRITER" />
+		<result property="boardContent" column="BOARD_CONTENT" />
+		<result property="boardOriginalFileName" column="BOARD_ORIGINAL_FILENAME" />
+		<result property="boardRenameFileName" column="BOARD_RENAME_FILENAME" />
+		<result property="boardDate" column="BOARD_DATE" />
+		<result property="boardLevel" column="BOARD_LEVEL" />
+		<result property="boardRef" column="BOARD_REF" />
+		<result property="boardReplyRef" column="BOARD_REPLY_REF" />
+		<result property="boardReplySeq" column="BOARD_REPLY_SEQ" />
+		<result property="boardReadCount" column="BOARD_READCOUNT" />
+	</resultMap>
+
+	<!-- ============== SELECT ============== -->
+	<select id="selectAll" parameterType="Board" resultType="list"
+		resultMap="resultBoard">
+		<!-- 부등호를 그냥 쓰면 태그의 꺽쇠와 혼동되기 때문에 해당 현상을 미연에 방지 -->
+		<!-- XML 코드 중 XML parser에 의해 해석하지 말고 그대로 브라우저에 출력하라는 뜻.. "&",">","<" 과 
+			같은 특수문자를 쓰고 싶은데 XML parser가 태그로 인식하는 것을 방지하기 위해서, 이 부분은 태그가 아니고 그냥 String이다! 
+			라고 말해주는 것이다. -->
+		<![CDATA[ 
+		SELECT * FROM (SELECT ROWNUM RNUM, BOARD_NUM, BOARD_TITLE, BOARD_WRITER, 
+			BOARD_CONTENT, BOARD_ORIGINAL_FILENAME, BOARD_RENAME_FILENAME, BOARD_DATE, 
+			BOARD_LEVEL, BOARD_REF, BOARD_REPLY_REF, BOARD_REPLY_SEQ, BOARD_READCOUNT 
+			FROM (SELECT * FROM BOARD ORDER BY BOARD_REF DESC, BOARD_REPLY_REF DESC, BOARD_LEVEL, BOARD_REPLY_SEQ))
+		WHERE RNUM >= #{page} AND RNUM <= #{limit}
+		]]>
+	</select>
+
+	<select id="selectTop5" resultType="list" resultMap="resultBoard">
+		<![CDATA[
+		SELECT * FROM (SELECT * FROM BOARD WHERE BOARD_LEVEL = 0 ORDER BY BOARD_READCOUNT DESC) WHERE ROWNUM < 6
+		]]>
+	</select>
+
+	<select id="listCount" resultType="_int">
+		SELECT COUNT(*) FROM BOARD
+	</select>
+
+	<select id="selectOne" parameterType="_int" resultType="Board"
+		resultMap="resultBoard">
+		SELECT * FROM BOARD WHERE BOARD_NUM = #{boardNum}
+	</select>
+	<!-- ============== SELECT ============== -->
+	<!-- <select id="selectTitle" parameterType="string" resultType="arraylist" 
+		resultMap="resultNotice"> SELECT * FROM NOTICE WHERE NOTICE_TITLE LIKE '%' 
+		|| #{keyword} || '%' ORDER BY NOTICE_NO DESC </select> -->
+
+	<!-- ============== INSERT ============== -->
+	<insert id="insertBoard" parameterType="Board" flushCache="true"
+		statementType="PREPARED" keyProperty="" keyColumn="" useGeneratedKeys="true"
+		timeout="20">
+		INSERT INTO BOARD VALUES
+		((SELECT MAX(BOARD_NUM) + 1 FROM
+		BOARD),
+		#{boardTitle}, #{boardWriter}, #{boardContent},
+		#{boardOriginalFileName},
+		#{boardRenameFileName}, SYSDATE, 0, (SELECT
+		MAX(BOARD_NUM) + 1 FROM
+		BOARD),
+		NULL, default, default)
+	</insert>
+
+	<insert id="insertReplyLevel1" parameterType="Board" flushCache="true"
+		statementType="PREPARED" keyProperty="" keyColumn="" useGeneratedKeys="true"
+		timeout="20">
+		INSERT INTO BOARD VALUES
+		((SELECT MAX(BOARD_NUM) + 1 FROM
+		BOARD),
+		#{boardTitle}, #{boardWriter}, #{boardContent}, NULL, NULL,
+		SYSDATE, #{boardLevel}, #{boardRef},
+		(SELECT MAX(BOARD_NUM) + 1 FROM
+		BOARD), 1, default)
+	</insert>
+
+	<insert id="insertReplyLevel2" parameterType="Board" flushCache="true"
+		statementType="PREPARED" keyProperty="" keyColumn="" useGeneratedKeys="true"
+		timeout="20">
+		INSERT INTO BOARD VALUES
+		((SELECT MAX(BOARD_NUM) + 1 FROM
+		BOARD),
+		#{boardTitle}, #{boardWriter}, #{boardContent}, NULL, NULL,
+		SYSDATE, #{boardLevel}, #{boardRef}, #{boardReplyRef}, 1, default)
+	</insert>
+	<!-- ============== INSERT ============== -->
+
+	<!-- ============== UPDATE ============== -->
+	<update id="addReadCount" parameterType="_int" flushCache="true"
+		statementType="PREPARED" timeout="20">
+		update board set board_readcount =
+		board_readcount + 1 where board_num =
+		#{boardNum}
+	</update>
+
+	<update id="updateBoard" parameterType="Board" flushCache="true"
+		statementType="PREPARED" timeout="20">
+		UPDATE BOARD SET BOARD_TITLE =
+		#{BoardTitle}, BOARD_CONTENT =
+		#{BoardContent},
+		BOARD_ORIGINAL_FILENAME
+		= #{boardOriginalFileName},
+		BOARD_RENAME_FILENAME =
+		#{boardRenameFileName}
+		WHERE BOARD_NUM = #{boardNum}
+	</update>
+
+	<update id="updateBoardReply" parameterType="Board" flushCache="true"
+		statementType="PREPARED" timeout="20">
+		UPDATE BOARD SET BOARD_TITLE =
+		#{BoardTitle}, BOARD_CONTENT =
+		#{BoardContent}
+		WHERE BOARD_NUM =
+		#{boardNum}
+	</update>
+
+	<update id="updateReplySeq" parameterType="Board" flushCache="true"
+		statementType="PREPARED" timeout="20">
+		UPDATE BOARD SET BOARD_REPLY_SEQ =
+		BOARD_REPLY_SEQ + 1
+		WHERE BOARD_REF = #{boardRef}
+		AND BOARD_LEVEL =
+		#{boardLevel}
+		AND BOARD_REPLY_REF = #{boardReplyRef}
+	</update>
+
+	<!-- ============== UPDATE ============== -->
+
+	<!-- ============== DELETE ============== -->
+	<delete id="deleteBoard" parameterType="_int" flushCache="true"
+		statementType="PREPARED" timeout="20">
+		DELETE FROM BOARD WHERE BOARD_NUM =
+		#{boardNum}
+	</delete>
+	<!-- ============== DELETE ============== -->
+
+
+
+</mapper>

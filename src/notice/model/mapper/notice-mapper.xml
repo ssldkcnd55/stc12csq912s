@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE mapper PUBLIC
+"-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="notice">
+
+	<resultMap id="resultNotice" type="Notice">
+		<!-- prop 는 필드명, column 은 DB 컬럼 명 -->
+		<id property="noticeNo" column="NOTICE_NO" />
+		<result property="noticeTitle" column="NOTICE_TITLE" />
+		<result property="noticeWriter" column="NOTICE_WRITER" />
+		<result property="noticeDate" column="NOTICE_DATE" />
+		<result property="noticeContent" column="NOTICE_CONTENT" />
+		<result property="filePath" column="FILE_PATH" />
+	</resultMap>
+
+	<select id="selectAll" resultType="arraylist" resultMap="resultNotice">
+		SELECT *
+		FROM NOTICE ORDER BY NOTICE_NO DESC
+	</select>
+
+	<select id="selectOne" parameterType="Notice" resultType="Notice"
+		resultMap="resultNotice">
+		SELECT * FROM NOTICE WHERE NOTICE_NO = #{noticeNo}
+	</select>
+
+	<select id="selectTitle" parameterType="string" resultType="arraylist"
+		resultMap="resultNotice">
+		SELECT * FROM NOTICE WHERE NOTICE_TITLE LIKE '%' ||
+		#{keyword} || '%' ORDER BY NOTICE_NO DESC
+	</select>
+
+	<insert id="insertNotice" parameterType="Notice" flushCache="true"
+		statementType="PREPARED" keyProperty="" keyColumn="" useGeneratedKeys="true"
+		timeout="20">
+		INSERT INTO NOTICE VALUES((SELECT COUNT(*) FROM NOTICE) + 1, #{noticeTitle},
+		#{noticeWriter}, SYSDATE, #{noticeContent}, #{filePath})
+	</insert>
+
+	<update id="updateNotice" parameterType="Notice" flushCache="true"
+		statementType="PREPARED" timeout="20">
+		UPDATE NOTICE SET NOTICE_TITLE = #{noticeTitle}, NOTICE_CONTENT =
+		#{noticeContent},
+		FILE_PATH = #{filePath} WHERE NOTICE_NO = #{noticeNo}
+	</update>
+
+	<delete id="deleteNotice" parameterType="_int" flushCache="true"
+		statementType="PREPARED" timeout="20">
+		DELETE FROM NOTICE WHERE NOTICE_NO = #{noticeNo}
+	</delete>
+
+
+</mapper>
