@@ -31,12 +31,18 @@
 		<result property="enroll" column="enroll_date" />
 		<result property="lastModified" column="lastmodified" />
 	</resultMap>
+	<sql id="ucc"> 
+	select * from member
+	</sql>
+	
 	
 	<select id="loginMember" parameterType="Member" 
 		resultMap="resultMember">
-		select * from member 
+		<include refid="ucc"/>
+		<![CDATA[
 		where userid= #{userId} 
 		and userpwd = #{userPwd}
+		]]>
 	</select>
 	
 	<delete id="deleteMember" parameterType="string"

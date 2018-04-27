@@ -22,7 +22,7 @@ public class MemberDao {
 	public MemberDao() {}
 
 	//로그인 확인 처리용 
-	public Member loginMember(Member member) {
+	public Member loginCheck(Member member) {
 		Member m = null;
 		SqlSession session = null;
 		

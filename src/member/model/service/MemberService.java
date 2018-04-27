@@ -11,7 +11,7 @@ public class MemberService {
 	public MemberService() {}
 
 	public Member loginCheck(Member member) {
-		return new MemberDao().loginMember(member);
+		return new MemberDao().loginCheck(member);
 	}
 
 	public int insertMember(Member member) {
